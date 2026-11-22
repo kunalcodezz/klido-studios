@@ -9,6 +9,7 @@ import {
 import { saveBuilderDraft } from '../../lib/builderApi';
 import { useEditorStore } from '../../stores/editorStore';
 import { useAuth } from '../../providers/AuthProvider';
+import { PublishProgressBar, type PublishPhase } from '../ui/PublishProgressBar';
 
 interface PublishModalProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function PublishModal({
 
   const [changeSummary, setChangeSummary] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [publishPhase, setPublishPhase] = useState<PublishPhase>('idle');
+  const [publishedRevNumber, setPublishedRevNumber] = useState<number | null>(null);
 
   const baselineQuery = useQuery({
     queryKey: ['published-baseline', pageMeta?.published_revision_id],
@@ -45,9 +48,11 @@ export function PublishModal({
   const publishMutation = useMutation({
     mutationFn: async () => {
       if (!pageId || !pageMeta) throw new Error('Missing page metadata.');
+      setErrorMsg(null);
       let activeDraftRevId = draftRevisionId;
 
       if (isDirty || !activeDraftRevId) {
+        setPublishPhase('saving-draft');
         const saved = await saveBuilderDraft(
           pageId,
           draftRevisionId,
@@ -58,12 +63,14 @@ export function PublishModal({
         markSaved(saved.revisionId);
       }
 
+      setPublishPhase('publishing');
       const published = await publishPageRevision(
         pageId,
         activeDraftRevId,
         changeSummary.trim() || 'Published from Klido Visual Builder'
       );
 
+      setPublishPhase('syncing');
       return published;
     },
     onSuccess: async (publishedRev) => {
@@ -76,20 +83,31 @@ export function PublishModal({
           published_at: publishedRev.published_at,
         });
       }
-      await queryClient.invalidateQueries({ queryKey: ['pages-list'] });
-      await queryClient.invalidateQueries({ queryKey: ['page-revisions'] });
-      await queryClient.invalidateQueries({ queryKey: ['dashboard-overview'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pages-list'] }),
+        queryClient.invalidateQueries({ queryKey: ['page-revisions'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-overview'] }),
+      ]);
+      setPublishedRevNumber(publishedRev.revision_number);
+      setPublishPhase('complete');
       onPublishedSuccess(publishedRev.revision_number);
       setChangeSummary('');
-      onClose();
+      window.setTimeout(() => {
+        setPublishPhase('idle');
+        setPublishedRevNumber(null);
+        onClose();
+      }, 650);
     },
     onError: (err) => {
+      setPublishPhase('idle');
+      setPublishedRevNumber(null);
       setErrorMsg(err instanceof Error ? err.message : 'Unable to publish revision.');
     },
   });
 
   if (!open || !pageMeta) return null;
 
+  const isPublishing = publishMutation.isPending || (publishPhase !== 'idle' && publishPhase !== 'complete');
   const diff = computeRevisionDiffSummary(content, baselineQuery.data ?? null);
 
   return (
@@ -109,9 +127,10 @@ export function PublishModal({
           </div>
           <button
             type="button"
+            disabled={isPublishing}
             onClick={onClose}
             aria-label="Close publish dialog"
-            className="rounded p-1 text-zinc-500 hover:bg-zinc-100"
+            className="rounded p-1 text-zinc-500 hover:bg-zinc-100 disabled:opacity-40"
           >
             <X className="h-4 w-4" />
           </button>
@@ -133,6 +152,15 @@ export function PublishModal({
               {errorMsg}
             </div>
           ) : null}
+
+          <PublishProgressBar
+            phase={publishPhase}
+            label={
+              publishPhase === 'complete' && publishedRevNumber
+                ? `Published Revision #${publishedRevNumber} live`
+                : undefined
+            }
+          />
 
           {/* Structural Diff vs Published */}
           <div className="rounded-md border border-zinc-200 bg-[#FAF9F6] p-4">
@@ -183,7 +211,7 @@ export function PublishModal({
             <input
               id="publish-summary"
               type="text"
-              disabled={!isSuperAdmin || publishMutation.isPending}
+              disabled={!isSuperAdmin || isPublishing || publishPhase === 'complete'}
               value={changeSummary}
               onChange={(e) => setChangeSummary(e.target.value)}
               placeholder="e.g. Updated Growth Bundle pricing copy and FAQ answers"
@@ -195,21 +223,26 @@ export function PublishModal({
         <div className="flex items-center justify-end gap-2 border-t border-zinc-200 bg-[#FAF9F6] px-5 py-3.5">
           <button
             type="button"
+            disabled={isPublishing}
             onClick={onClose}
-            className="rounded-md border border-zinc-300 bg-white px-3.5 py-2 text-xs font-medium text-[#111111] hover:bg-zinc-50"
+            className="rounded-md border border-zinc-300 bg-white px-3.5 py-2 text-xs font-medium text-[#111111] hover:bg-zinc-50 disabled:opacity-40"
           >
             Cancel
           </button>
           {isSuperAdmin ? (
             <button
               type="button"
-              disabled={publishMutation.isPending}
+              disabled={isPublishing || publishPhase === 'complete'}
               onClick={() => publishMutation.mutate()}
               className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>
-                {publishMutation.isPending ? 'Publishing…' : 'Confirm & Publish Live'}
+                {isPublishing
+                  ? 'Publishing…'
+                  : publishPhase === 'complete'
+                    ? 'Published!'
+                    : 'Confirm & Publish Live'}
               </span>
             </button>
           ) : null}

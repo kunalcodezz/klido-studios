@@ -9,6 +9,7 @@ import {
   updatePageMetadata,
 } from '../../lib/revisionsApi';
 import { useAuth } from '../../providers/AuthProvider';
+import { PublishProgressBar, type PublishPhase } from '../../components/ui/PublishProgressBar';
 import type { PageType, SeoMetadata } from '../../types/database';
 
 export default function PageDetailsPage() {
@@ -44,6 +45,8 @@ export default function PageDetailsPage() {
   });
   const [notice, setNotice] = useState<string | null>(null);
   const [errText, setErrText] = useState<string | null>(null);
+  const [publishPhase, setPublishPhase] = useState<PublishPhase>('idle');
+  const [publishedRevNumber, setPublishedRevNumber] = useState<number | null>(null);
 
   useEffect(() => {
     if (pageQuery.data?.page) {
@@ -87,20 +90,35 @@ export default function PageDetailsPage() {
   });
 
   const publishMutation = useMutation({
-    mutationFn: () =>
-      publishPageRevision(
+    mutationFn: async () => {
+      setErrText(null);
+      setNotice(null);
+      setPublishPhase('publishing');
+      const rev = await publishPageRevision(
         pageId!,
         pageQuery.data?.draftRevisionId ?? null,
         'Published from Page Settings'
-      ),
+      );
+      setPublishPhase('syncing');
+      return rev;
+    },
     onSuccess: async (rev) => {
       setErrText(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['page-details', pageId] }),
+        queryClient.invalidateQueries({ queryKey: ['page-revisions', pageId] }),
+        queryClient.invalidateQueries({ queryKey: ['pages-list'] }),
+      ]);
+      setPublishedRevNumber(rev.revision_number);
+      setPublishPhase('complete');
       setNotice(`Published Revision #${rev.revision_number} live.`);
-      await queryClient.invalidateQueries({ queryKey: ['page-details', pageId] });
-      await queryClient.invalidateQueries({ queryKey: ['page-revisions', pageId] });
-      await queryClient.invalidateQueries({ queryKey: ['pages-list'] });
+      window.setTimeout(() => {
+        setPublishPhase('idle');
+      }, 2500);
     },
     onError: (err) => {
+      setPublishPhase('idle');
+      setPublishedRevNumber(null);
       setNotice(null);
       setErrText(err instanceof Error ? err.message : 'Publish failed.');
     },
@@ -163,6 +181,15 @@ export default function PageDetailsPage() {
           ) : null}
         </div>
       </div>
+
+      <PublishProgressBar
+        phase={publishPhase}
+        label={
+          publishPhase === 'complete' && publishedRevNumber
+            ? `Published Revision #${publishedRevNumber} live`
+            : undefined
+        }
+      />
 
       {notice ? (
         <div className="rounded-md border border-zinc-200 bg-white px-4 py-3 text-xs text-[#111111]">

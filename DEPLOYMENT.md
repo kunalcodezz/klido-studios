@@ -10,8 +10,8 @@ This runbook documents production deployment across **two independent Vercel pro
 Open the Supabase SQL Editor for project `wbckdglxkogblbegskho` and execute:
 1. `supabase/migrations/0001_extensions_and_enums.sql`
 2. `supabase/migrations/0002_core_tables.sql`
-3. `supabase/migrations/0003_rls_and_storage.sql`
-4. `supabase/migrations/0004_rpcs_and_triggers.sql`
+3. `supabase/migrations/0003_rls_and_security_functions.sql`
+4. `supabase/migrations/0004_storage_policies.sql`
 5. `supabase/migrations/0005_seed_klido_defaults.sql`
 
 ### B. Verify RLS & Security Policies
