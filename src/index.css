@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --studio-bg: #faf9f6;
+    --studio-surface: #ffffff;
+    --studio-surface-muted: #f4f3ef;
+    --studio-ink: #111111;
+    --studio-ink-secondary: #3f3f46;
+    --studio-ink-muted: #71717a;
+    --studio-border: #e4e4e7;
+    --studio-border-strong: #d4d4d8;
+  }
+
+  html {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--studio-bg);
+    color: var(--studio-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--studio-bg);
+    color: var(--studio-ink);
+  }
+
+  .font-editorial {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-studio {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Klido Studio",
+  "description": "Custom CMS, visual website builder, and admin dashboard for the Klido digital growth and e-commerce operations agency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
