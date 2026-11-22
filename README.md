@@ -10,8 +10,8 @@ It enables authorized Klido administrators to visually build pages, edit structu
 
 | Application | Repository | Domain | Hosting | Responsibility |
 | :--- | :--- | :--- | :--- | :--- |
-| **Klido Public Website** | `kunalcodezz/Klido` (`klido-website`) | `klido.in` | Netlify | Public SSR/SPA site fetching published CMS revisions, design tokens, and dynamic collections from Supabase. |
-| **Klido Studio (CMS)** | `klido-studio` (this app) | `studio.klido.in` | Netlify | Admin authentication, visual three-panel page builder, content managers, media library, SEO, drafts, and publishing. |
+| **Klido Public Website** | `kunalcodezz/Klido` (`klido-website`) | `klido.in` | Vercel | Public SSR/SPA site fetching published CMS revisions, design tokens, and dynamic collections from Supabase. |
+| **Klido Studio (CMS)** | `klido-studio` (this app) | `studio.klido.in` | Vercel | Admin authentication, visual three-panel page builder, content managers, media library, SEO, drafts, and publishing. |
 | **Shared Backend** | Shared Supabase Project | — | Supabase | PostgreSQL database, Auth, Row Level Security (RLS), Storage buckets, and atomic publish/revision RPCs. |
 
 ---
@@ -76,7 +76,7 @@ VITE_SUPABASE_ANON_KEY=
 - [`DATABASE.md`](./DATABASE.md) — Supabase PostgreSQL schema, RPCs, and storage bucket setup
 - [`SECURITY.md`](./SECURITY.md) — RBAC matrix, RLS safeguards, XSS & media upload hardening
 - [`docs/KLIDO_WEBSITE_INTEGRATION.md`](./docs/KLIDO_WEBSITE_INTEGRATION.md) — Drop-in public site CMS integration guide for `kunalcodezz/Klido`
-- [`DEPLOYMENT.md`](./DEPLOYMENT.md) — Dual independent Netlify + Supabase production deployment runbook
+- [`DEPLOYMENT.md`](./DEPLOYMENT.md) — Dual independent Vercel + Supabase production deployment runbook
 - [`EDITOR.md`](./EDITOR.md) — Non-technical editor and administrator handbook
 
 ---
@@ -90,5 +90,5 @@ VITE_SUPABASE_ANON_KEY=
 - [x] **Milestone 5**: Three-panel Visual Website Builder (dnd-kit layers, live canvas, dynamic inspector).
 - [x] **Milestone 6**: Drafts, debounced autosave, secure expiring preview, atomic publishing, and revision history.
 - [x] **Milestone 7**: Content managers (Services, Portfolio, Brands, Testimonials, Navigation/Footer), Media Library, SEO, Design System.
-- [x] **Milestone 8**: `klido-website` CMS integration package, end-to-end/security test suite, and independent Netlify deployment docs.
+- [x] **Milestone 8**: `klido-website` CMS integration package, end-to-end/security test suite, and independent Vercel deployment docs.
 

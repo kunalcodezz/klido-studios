@@ -1,6 +1,6 @@
-# Klido Studio & Klido Public Website — Deployment Runbook
+# Klido Studio & Klido Public Website — Vercel Deployment Runbook
 
-This runbook documents production deployment across **two independent Netlify sites** backed by **one shared Supabase project**.
+This runbook documents production deployment across **two independent Vercel projects** backed by **one shared Supabase project**.
 
 ---
 
@@ -41,37 +41,39 @@ Run `supabase/tests/rls_verification.sql` in the SQL Editor (rollback transactio
 
 ---
 
-## 2. Independent Netlify Deployment #1 — `klido-studio` (`studio.klido.in`)
+## 2. Independent Vercel Project #1 — `klido-studio` (`studio.klido.in`)
 
-1. Connect the `klido-studio` repository in Netlify.
-2. **Build Settings**:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-   - Node version: `20` or `22`
-3. **Environment Variables**:
+1. Import the private `klido-studio` repository into **Vercel → Add New → Project**.
+2. **Build & Output Settings** (auto-detected from root `vercel.json`):
+   - Framework Preset: `Vite`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Node.js Version: `20.x` or `22.x`
+3. **Environment Variables** (Production & Preview):
    - `VITE_SUPABASE_URL` = `https://wbckdglxkogblbegskho.supabase.co`
    - `VITE_SUPABASE_ANON_KEY` = `sb_publishable_...`
    - *(Never set `SUPABASE_SERVICE_ROLE_KEY` in `VITE_*` variables.)*
 4. **Routing & Security Headers**:
-   - Handled automatically by root `netlify.toml` (SPA rewrite `/* -> /index.html 200`, `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`).
+   - Handled automatically by root `vercel.json` (SPA rewrite `/(.*) -> /index.html`, `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`).
 5. **Custom Domain & SSL**:
-   - Attach `studio.klido.in` in **Domain management** and provision Let's Encrypt TLS certificate.
+   - Add `studio.klido.in` under **Project Settings → Domains** and point your DNS `CNAME` record (`studio`) to `cname.vercel-dns.com`.
 
 ---
 
-## 3. Independent Netlify Deployment #2 — `klido-website` (`klido.in`)
+## 3. Independent Vercel Project #2 — `klido-website` (`klido.in`)
 
-1. Keep `https://github.com/kunalcodezz/Klido.git` connected as its own Netlify site.
-2. Apply integration steps from `docs/KLIDO_WEBSITE_INTEGRATION.md` (including adding `netlify.toml` to `klido-website`).
-3. **Build Settings**:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
+1. Import the private `kunalcodezz/Klido` repository as a separate Vercel project.
+2. Apply the integration steps from `docs/KLIDO_WEBSITE_INTEGRATION.md` (including adding `vercel.json` to `klido-website`).
+3. **Build & Output Settings**:
+   - Framework Preset: `Vite`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
 4. **Environment Variables**:
    - `VITE_SUPABASE_URL` = `https://wbckdglxkogblbegskho.supabase.co`
    - `VITE_SUPABASE_ANON_KEY` = `sb_publishable_...`
    - Retain existing `VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_TEMPLATE_ID`, `VITE_EMAILJS_PUBLIC_KEY`.
 5. **Custom Domain & SSL**:
-   - Keep `klido.in` / `www.klido.in` pointing to this Netlify site with HTTPS enforced.
+   - Add `klido.in` and `www.klido.in` under **Project Settings → Domains** with automatic Vercel TLS certificates.
 
 ---
 
@@ -79,10 +81,11 @@ Run `supabase/tests/rls_verification.sql` in the SQL Editor (rollback transactio
 
 ### Post-Deploy Smoke Checks
 - `https://studio.klido.in/login` loads without console errors and redirects `/dashboard` when unauthenticated.
+- Hard-refreshing `/dashboard/pages` or `/preview/:pageId?token=...` returns HTTP 200 via `vercel.json` SPA rewrites (no 404).
 - Editing a page in Visual Builder saves a draft without altering live `https://klido.in`.
 - Generating an expiring preview link opens `/preview/:pageId?token=...` with `<meta name="robots" content="noindex, nofollow" />`.
 - Publishing a page as `SUPER_ADMIN` immediately reflects on `https://klido.in`.
 
-### Fast Content Rollback
+### Fast Content & Build Rollback
 - **Page-level rollback**: Open **Klido Studio → Revisions**, choose the prior revision, and click **Restore & Publish** (executes `restore_page_revision` RPC atomically).
-- **Site-level rollback**: Use Netlify **Deploys → Publish deploy** on the respective site (`klido-studio` or `klido-website`) independently.
+- **Site-level rollback**: Use Vercel **Deployments → Instant Rollback** on either project (`klido-studio` or `klido-website`) independently.

@@ -2,7 +2,7 @@
 
 This guide explains how to connect the **existing public agency repository** (`https://github.com/kunalcodezz/Klido.git`, deployed at `https://klido.in`) to the **shared Supabase CMS backend** managed by **Klido Studio** (`studio.klido.in`).
 
-> **Architectural Boundary**: Keep `klido-website` (`kunalcodezz/Klido`) and `klido-studio` as two completely independent repositories and two independent Netlify sites. Never embed admin auth or CMS editing routes into `klido-website`.
+> **Architectural Boundary**: Keep `klido-website` (`kunalcodezz/Klido`) and `klido-studio` as two completely independent repositories and two independent Vercel projects. Never embed admin auth or CMS editing routes into `klido-website`.
 
 ---
 
@@ -14,7 +14,7 @@ Install `@supabase/supabase-js` and `@tanstack/react-query` (plus `zod` if shari
 npm install @supabase/supabase-js @tanstack/react-query zod
 ```
 
-Add only **public** environment variables to `klido-website`'s `.env` and Netlify environment settings (keep existing `VITE_EMAILJS_*` variables for the contact form):
+Add only **public** environment variables to `klido-website`'s `.env` and Vercel Project Environment Variables (keep existing `VITE_EMAILJS_*` variables for the contact form):
 
 ```env
 VITE_SUPABASE_URL=https://wbckdglxkogblbegskho.supabase.co
@@ -59,30 +59,38 @@ In `klido-website`'s `App.tsx` catch-all / page route:
 
 ## 4. Resolving Audit Findings in `klido-website` (`Klido.git`)
 
-### A. Add `netlify.toml` to `klido-website` root (fixes SPA deep-link 404s)
-`Klido.git` uses `BrowserRouter` for `/services`, `/approach`, `/about`, and `/contact` without a Netlify SPA fallback. Add `netlify.toml` to `Klido.git`:
+### A. Add `vercel.json` to `klido-website` root (fixes SPA deep-link 404s)
+`Klido.git` uses `BrowserRouter` for `/services`, `/approach`, `/about`, and `/contact` without a Vercel SPA rewrite. Add `vercel.json` to the root of `Klido.git`:
 
-```toml
-[build]
-  command = "npm run build"
-  publish = "dist"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
 ```
 
 ### B. Replace Legacy Hash URLs in `Klido.git/public/sitemap.xml`

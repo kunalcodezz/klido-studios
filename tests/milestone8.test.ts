@@ -139,13 +139,34 @@ describe('Milestone 8 — Public Site Integration, Security Hygiene & Deployment
     expect(seo.robotsContent).toBe('index, follow');
   });
 
-  it('verifies Netlify SPA + noindex security headers and codebase hygiene (zero dangerouslySetInnerHTML or service_role)', () => {
+  it('verifies Vercel SPA + noindex security headers and codebase hygiene (zero dangerouslySetInnerHTML or service_role)', () => {
     const rootDir = process.cwd();
-    const netlifyToml = fs.readFileSync(path.join(rootDir, 'netlify.toml'), 'utf8');
-    expect(netlifyToml).toContain('to = "/index.html"');
-    expect(netlifyToml).toContain('status = 200');
-    expect(netlifyToml).toContain('X-Robots-Tag = "noindex, nofollow"');
-    expect(netlifyToml).toContain('X-Frame-Options = "DENY"');
+    const vercelRaw = fs.readFileSync(path.join(rootDir, 'vercel.json'), 'utf8');
+    const vercelConfig = JSON.parse(vercelRaw) as {
+      framework: string;
+      buildCommand: string;
+      outputDirectory: string;
+      rewrites: Array<{ source: string; destination: string }>;
+      headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
+    };
+
+    expect(vercelConfig.framework).toBe('vite');
+    expect(vercelConfig.outputDirectory).toBe('dist');
+    expect(vercelConfig.rewrites).toContainEqual({
+      source: '/(.*)',
+      destination: '/index.html',
+    });
+
+    const globalHeaders =
+      vercelConfig.headers.find((h) => h.source === '/(.*)')?.headers ?? [];
+    expect(globalHeaders).toContainEqual({
+      key: 'X-Robots-Tag',
+      value: 'noindex, nofollow',
+    });
+    expect(globalHeaders).toContainEqual({
+      key: 'X-Frame-Options',
+      value: 'DENY',
+    });
 
     const envExample = fs.readFileSync(path.join(rootDir, '.env.example'), 'utf8');
     expect(envExample).not.toMatch(/^\s*VITE_.*SERVICE_ROLE|sb_secret_/im);
