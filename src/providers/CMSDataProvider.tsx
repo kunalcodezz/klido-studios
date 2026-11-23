@@ -437,7 +437,8 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
   const { data, isLoading } = useQuery({
     queryKey: ['cms-collections-public'],
     queryFn: fetchCmsCollections,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const value = useMemo<CMSDataContextValue>(() => {
@@ -446,17 +447,30 @@ export function CMSDataProvider({ children }: { children: ReactNode }) {
       mediaMap[m.id] = m;
     }
 
-    const hasDbServices = Boolean(data && data.services.length > 0);
+    const dbPlans = (data?.services ?? []).filter((s) => s.service_kind === 'plan');
+    const dbPracticeAreas = (data?.services ?? []).filter(
+      (s) => s.service_kind === 'practice_area'
+    );
+    const fallbackPlans = FALLBACK_SERVICES.filter((s) => s.service_kind === 'plan');
+    const fallbackPracticeAreas = FALLBACK_SERVICES.filter(
+      (s) => s.service_kind === 'practice_area'
+    );
+
+    const hasDbPlans = dbPlans.length > 0;
+    const hasDbPracticeAreas = dbPracticeAreas.length > 0;
     const hasDbBrands = Boolean(data && data.brands.length > 0);
 
     return {
-      services: hasDbServices ? data!.services : FALLBACK_SERVICES,
+      services: [
+        ...(hasDbPlans ? dbPlans : fallbackPlans),
+        ...(hasDbPracticeAreas ? dbPracticeAreas : fallbackPracticeAreas),
+      ],
       projects: data?.projects ?? [],
       brands: hasDbBrands ? data!.brands : FALLBACK_BRANDS,
       testimonials: data?.testimonials ?? [],
       mediaMap,
       isLoading,
-      usingFallback: !data || (!hasDbServices && !hasDbBrands),
+      usingFallback: !data || (!hasDbPlans && !hasDbPracticeAreas && !hasDbBrands),
     };
   }, [data, isLoading]);
 

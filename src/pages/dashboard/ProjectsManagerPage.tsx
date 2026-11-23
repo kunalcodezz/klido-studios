@@ -74,7 +74,7 @@ export default function ProjectsManagerPage() {
       setErrMsg(null);
       setModalOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['projects-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
     onError: (err) => setErrMsg(err instanceof Error ? err.message : 'Unable to save project.'),
   });
@@ -83,7 +83,7 @@ export default function ProjectsManagerPage() {
     mutationFn: deleteProject,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['projects-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
   });
 

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Star, Trash2, X } from 'lucide-react';
+import { Download, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { deleteService, listServices, upsertService } from '../../lib/contentApi';
+import { seedMissingDefaultServices } from '../../lib/seedKlidoCms';
 import { useAuth } from '../../providers/AuthProvider';
 import type { ServiceRecord } from '../../types/database';
 
@@ -98,7 +99,7 @@ export default function ServicesManagerPage() {
       setErrMsg(null);
       setModalOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['services-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-services'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
     onError: (err) => {
       setErrMsg(err instanceof Error ? err.message : 'Unable to save service.');
@@ -109,7 +110,19 @@ export default function ServicesManagerPage() {
     mutationFn: deleteService,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['services-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-services'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
+    },
+  });
+
+  const seedDefaultsMutation = useMutation({
+    mutationFn: seedMissingDefaultServices,
+    onSuccess: async () => {
+      setErrMsg(null);
+      await queryClient.invalidateQueries({ queryKey: ['services-manager'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
+    },
+    onError: (err) => {
+      setErrMsg(err instanceof Error ? err.message : 'Unable to seed default services.');
     },
   });
 
@@ -149,6 +162,8 @@ export default function ServicesManagerPage() {
   const filtered = services.filter((s) =>
     kindFilter === 'all' ? true : s.service_kind === kindFilter
   );
+  const missingPracticeAreas =
+    !isLoading && services.filter((s) => s.service_kind === 'practice_area').length === 0;
 
   return (
     <div className="space-y-6">
@@ -158,19 +173,32 @@ export default function ServicesManagerPage() {
             Services &amp; Pricing Plans
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Manage Klido monthly retainers (e.g. Meta Ads, Growth Bundle) and core practice areas.
+            Manage Klido monthly retainers (e.g. Meta Ads, Growth Bundle) and core practice areas. Saved changes publish live to Supabase immediately.
           </p>
         </div>
 
         {canEdit ? (
-          <button
-            type="button"
-            onClick={openCreate}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-3.5 py-2 text-xs font-medium text-white hover:bg-zinc-800"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add Service</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {missingPracticeAreas ? (
+              <button
+                type="button"
+                disabled={seedDefaultsMutation.isPending}
+                onClick={() => seedDefaultsMutation.mutate()}
+                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-3.5 py-2 text-xs font-medium text-[#111111] hover:bg-zinc-50 disabled:opacity-50"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>{seedDefaultsMutation.isPending ? 'Seeding…' : 'Seed 4 Practice Areas'}</span>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#111111] px-3.5 py-2 text-xs font-medium text-white hover:bg-zinc-800"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add Service</span>
+            </button>
+          </div>
         ) : null}
       </div>
 
@@ -352,60 +380,112 @@ export default function ServicesManagerPage() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#111111]">Price</label>
-                  <input
-                    type="text"
-                    placeholder="₹9,999"
-                    value={form.price_display}
-                    onChange={(e) => setForm({ ...form, price_display: e.target.value })}
-                    className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#111111]">Original Price</label>
-                  <input
-                    type="text"
-                    placeholder="₹12,999"
-                    value={form.original_price_display}
-                    onChange={(e) => setForm({ ...form, original_price_display: e.target.value })}
-                    className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#111111]">Discount</label>
-                  <input
-                    type="text"
-                    placeholder="23% OFF"
-                    value={form.discount_label}
-                    onChange={(e) => setForm({ ...form, discount_label: e.target.value })}
-                    className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#111111]">Period</label>
-                  <input
-                    type="text"
-                    placeholder="/month"
-                    value={form.billing_period}
-                    onChange={(e) => setForm({ ...form, billing_period: e.target.value })}
-                    className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block text-xs font-semibold text-[#111111]">
-                  Features (one per line)
-                </label>
+                <label className="block text-xs font-semibold text-[#111111]">Description</label>
                 <textarea
-                  rows={4}
-                  value={form.featuresText}
-                  onChange={(e) => setForm({ ...form, featuresText: e.target.value })}
+                  rows={2}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-xs"
                 />
               </div>
+
+              {form.service_kind === 'plan' ? (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111111]">Price</label>
+                      <input
+                        type="text"
+                        placeholder="₹9,999"
+                        value={form.price_display}
+                        onChange={(e) => setForm({ ...form, price_display: e.target.value })}
+                        className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111111]">Original Price</label>
+                      <input
+                        type="text"
+                        placeholder="₹12,999"
+                        value={form.original_price_display}
+                        onChange={(e) => setForm({ ...form, original_price_display: e.target.value })}
+                        className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111111]">Discount</label>
+                      <input
+                        type="text"
+                        placeholder="23% OFF"
+                        value={form.discount_label}
+                        onChange={(e) => setForm({ ...form, discount_label: e.target.value })}
+                        className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111111]">Period</label>
+                      <input
+                        type="text"
+                        placeholder="/month"
+                        value={form.billing_period}
+                        onChange={(e) => setForm({ ...form, billing_period: e.target.value })}
+                        className="mt-1 w-full rounded border border-zinc-300 px-2.5 py-1.5 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#111111]">
+                      Features (one per line)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={form.featuresText}
+                      onChange={(e) => setForm({ ...form, featuresText: e.target.value })}
+                      className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-xs"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#111111]">Operating Cadence</label>
+                    <input
+                      type="text"
+                      placeholder="Weekly optimization & creative review"
+                      value={form.cadence}
+                      onChange={(e) => setForm({ ...form, cadence: e.target.value })}
+                      className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111111]">
+                        Core Deliverables (one per line)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={form.deliverablesText}
+                        onChange={(e) => setForm({ ...form, deliverablesText: e.target.value })}
+                        className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#111111]">
+                        Primary Stack &amp; Tooling (one per line)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={form.toolingText}
+                        onChange={(e) => setForm({ ...form, toolingText: e.target.value })}
+                        className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-xs"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>

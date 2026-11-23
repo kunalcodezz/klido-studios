@@ -71,7 +71,7 @@ export default function BrandsManagerPage() {
       setErrMsg(null);
       setModalOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['brands-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-brands'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
     onError: (err) => setErrMsg(err instanceof Error ? err.message : 'Unable to save brand.'),
   });
@@ -80,7 +80,7 @@ export default function BrandsManagerPage() {
     mutationFn: deleteBrand,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['brands-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-brands'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
   });
 

@@ -107,7 +107,8 @@ export function GlobalSettingsProvider({ children }: { children: ReactNode }) {
   const { data, isLoading } = useQuery({
     queryKey: ['cms-global-settings'],
     queryFn: fetchGlobalSettingsFromDb,
-    staleTime: 60_000,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
 
   const value = useMemo<GlobalSettingsContextValue>(() => {

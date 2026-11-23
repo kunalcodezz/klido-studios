@@ -61,7 +61,7 @@ export default function TestimonialsManagerPage() {
       setErrMsg(null);
       setModalOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['testimonials-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-testimonials'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
     onError: (err) => setErrMsg(err instanceof Error ? err.message : 'Unable to save testimonial.'),
   });
@@ -70,7 +70,7 @@ export default function TestimonialsManagerPage() {
     mutationFn: deleteTestimonial,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['testimonials-manager'] });
-      await queryClient.invalidateQueries({ queryKey: ['cms-testimonials'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
   });
 

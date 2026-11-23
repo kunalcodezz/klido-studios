@@ -32,6 +32,9 @@ export default function PagesListPage() {
       setSeedMessage(parts.join(''));
       await queryClient.invalidateQueries({ queryKey: ['pages-list'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard-overview'] });
+      await queryClient.invalidateQueries({ queryKey: ['services-manager'] });
+      await queryClient.invalidateQueries({ queryKey: ['brands-manager'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms-collections-public'] });
     },
     onError: (err) => {
       setSeedMessage(err instanceof Error ? err.message : 'Unable to sync approved pages.');

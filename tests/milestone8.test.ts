@@ -206,5 +206,30 @@ describe('Milestone 8 — Public Site Integration, Security Hygiene & Deployment
     const bundle = await fetchPublicSiteBundle();
     expect(bundle.designTokens.colors.primary).toBeTruthy();
     expect(bundle.seoGlobal.siteName).toBeTruthy();
+    expect(Array.isArray(bundle.services)).toBe(true);
+  });
+
+  it('invalidates cms-collections-public across all collection managers and includes both plans & practice areas in seed defaults', async () => {
+    const rootDir = process.cwd();
+    const managers = [
+      'ServicesManagerPage.tsx',
+      'ProjectsManagerPage.tsx',
+      'BrandsManagerPage.tsx',
+      'TestimonialsManagerPage.tsx',
+    ];
+
+    for (const file of managers) {
+      const source = fs.readFileSync(
+        path.join(rootDir, 'src', 'pages', 'dashboard', file),
+        'utf8'
+      );
+      expect(source).toContain("queryKey: ['cms-collections-public']");
+    }
+
+    const { DEFAULT_KLIDO_SERVICES } = await import('../src/lib/seedKlidoCms');
+    const plans = DEFAULT_KLIDO_SERVICES.filter((s) => s.service_kind === 'plan');
+    const areas = DEFAULT_KLIDO_SERVICES.filter((s) => s.service_kind === 'practice_area');
+    expect(plans.length).toBeGreaterThanOrEqual(5);
+    expect(areas.length).toBeGreaterThanOrEqual(4);
   });
 });

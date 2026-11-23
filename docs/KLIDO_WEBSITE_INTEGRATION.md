@@ -109,3 +109,78 @@ Replace `/#services`, `/#approach`, `/#pricing`, and `/#contact` in `public/site
 
 ### C. Fix Broken `STUDIO_IMAGES` Paths
 In `Klido.git/src/data/klidoData.ts`, `STUDIO_IMAGES` referenced missing `/src/assets/images/klido_*.jpg` paths. Upload finalized photography into **Klido Studio → Media Library** (`klido-media` bucket) and bind the generated `public_url` values directly inside the Page Builder (`image` and `hero` blocks) so zero broken relative assets exist in production.
+
+---
+
+## 5. Quick Drop-In: Live Services & Pricing Plans (`PricingSection.tsx` & `ServicesPage.tsx`)
+
+> **Important**: Editing **Services & Pricing Plans** in Klido Studio saves immediately to Supabase (`public.services`). There is no separate "Publish" step for Services—changes appear on `klido.in` as soon as `kunalcodezz/Klido` fetches `public.services` from Supabase instead of reading static local arrays.
+
+Add this lightweight hook inside `kunalcodezz/Klido/src/hooks/usePublicServices.ts`:
+
+```ts
+import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+export interface CmsService {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  service_kind: 'plan' | 'practice_area';
+  price_display: string;
+  original_price_display: string;
+  discount_label: string;
+  billing_period: string;
+  features: string[];
+  deliverables: string[];
+  tooling: string[];
+  cadence: string;
+  cta_label: string;
+  cta_url: string;
+  is_featured: boolean;
+  display_order: number;
+}
+
+export function usePublicServices() {
+  const [services, setServices] = useState<CmsService[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from('services')
+      .select('*')
+      .eq('is_visible', true)
+      .order('display_order', { ascending: true })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (!error && data) {
+          setServices(data as CmsService[]);
+        }
+        setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return {
+    plans: services.filter((s) => s.service_kind === 'plan'),
+    practiceAreas: services.filter((s) => s.service_kind === 'practice_area'),
+    loading,
+  };
+}
+```
+
+Then in `kunalcodezz/Klido`:
+- In `PricingSection.tsx`: call `const { plans } = usePublicServices();` and render `plans` when `plans.length > 0` (falling back to static plans only while loading or if offline).
+- In `ServicesPage.tsx`: call `const { practiceAreas } = usePublicServices();` and render `practiceAreas` when `practiceAreas.length > 0` (seed default Practice Areas first from **Klido Studio → Services → Seed 4 Practice Areas**).
+- Commit and push `kunalcodezz/Klido` to GitHub so Vercel rebuilds `klido.in`. Once deployed, every edit in **Klido Studio → Services** reflects live on `klido.in` on page refresh without redeploying!
+
