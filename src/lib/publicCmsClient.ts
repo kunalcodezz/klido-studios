@@ -1,6 +1,7 @@
 import { getSupabaseClient, isSupabaseConfigured } from './supabase';
 import { validatePageContentTree } from './schemaValidator';
 import { isSafeUrl } from '../schemas/validation';
+import { filterAndSortApprovedPages, isApprovedCmsSlug } from '../data/pageRegistry';
 import { DEFAULT_KLIDO_DESIGN_TOKENS, type DesignSystemTokens } from '../schemas/styles';
 import {
   DEFAULT_FOOTER_CONFIG,
@@ -61,7 +62,7 @@ export function normalizePublicPath(pathname: string): string {
  * a published revision pointer are never rendered on klido-website.
  */
 export function filterPublishedPublicPages(pages: PageRecord[]): PageRecord[] {
-  return pages.filter(
+  return filterAndSortApprovedPages(pages).filter(
     (page) => page.status === 'published' && Boolean(page.published_revision_id)
   );
 }
@@ -139,6 +140,7 @@ export async function fetchPublishedPageBySlug(
 ): Promise<PublishedPagePayload | null> {
   if (!isSupabaseConfigured) return null;
   const slug = normalizePublicPath(rawSlug);
+  if (!isApprovedCmsSlug(slug)) return null;
   const supabase = getSupabaseClient();
 
   const { data: pageData, error: pageError } = await supabase

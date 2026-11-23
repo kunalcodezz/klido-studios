@@ -1,8 +1,10 @@
 import { getSupabaseClient } from './supabase';
 import { KLIDO_SEED_PAGES } from '../data/klidoSeedPages';
+import { isApprovedCmsSlug, normalizeRegistrySlug } from '../data/pageRegistry';
 
 export interface SeedResult {
   pagesInserted: number;
+  pagesArchived: number;
   servicesInserted: number;
   brandsInserted: number;
   navInserted: number;
@@ -19,13 +21,51 @@ export async function seedKlidoInitialContent(): Promise<SeedResult> {
   }
 
   let pagesInserted = 0;
+  let pagesArchived = 0;
 
-  // 1. Seed missing Klido pages + initial draft revisions
-  const { data: existingPages } = await supabase.from('pages').select('slug');
-  const existingSlugs = new Set((existingPages ?? []).map((p) => p.slug));
+  // 1. Inspect existing CMS pages: archive any obsolete/unapproved slugs safely (never delete)
+  const { data: existingPages } = await supabase
+    .from('pages')
+    .select('id, slug, status');
 
+  const existingBySlug = new Map<string, { id: string; status: string }>();
+
+  for (const row of existingPages ?? []) {
+    const normalized = normalizeRegistrySlug(row.slug as string);
+    if (!isApprovedCmsSlug(normalized)) {
+      if (row.status !== 'archived') {
+        const { error: archiveErr } = await supabase
+          .from('pages')
+          .update({
+            status: 'archived',
+            published_revision_id: null,
+            updated_by: user.id,
+          })
+          .eq('id', row.id);
+        if (!archiveErr) {
+          pagesArchived += 1;
+        }
+      }
+      continue;
+    }
+
+    if (!existingBySlug.has(normalized)) {
+      existingBySlug.set(normalized, { id: row.id as string, status: row.status as string });
+    }
+  }
+
+  // Ensure all 5 approved pages exist (un-archiving if previously archived, or inserting cleanly)
   for (const blueprint of KLIDO_SEED_PAGES) {
-    if (existingSlugs.has(blueprint.slug)) continue;
+    const existing = existingBySlug.get(blueprint.slug);
+    if (existing) {
+      if (existing.status === 'archived') {
+        await supabase
+          .from('pages')
+          .update({ status: 'draft', updated_by: user.id })
+          .eq('id', existing.id);
+      }
+      continue;
+    }
 
     const { data: insertedPage, error: pageErr } = await supabase
       .from('pages')
@@ -235,5 +275,5 @@ export async function seedKlidoInitialContent(): Promise<SeedResult> {
     if (!error) navInserted = defaultNav.length;
   }
 
-  return { pagesInserted, servicesInserted, brandsInserted, navInserted };
+  return { pagesInserted, pagesArchived, servicesInserted, brandsInserted, navInserted };
 }

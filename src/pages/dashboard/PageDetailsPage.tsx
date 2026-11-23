@@ -219,30 +219,29 @@ export default function PageDetailsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#111111]">URL Slug</label>
+                <label className="block text-xs font-semibold text-[#111111]">
+                  Approved Route Slug (Locked)
+                </label>
                 <input
                   type="text"
-                  disabled={!canEdit}
+                  readOnly
+                  disabled
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  className="mt-1.5 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm"
+                  className="mt-1.5 w-full rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 font-mono text-sm text-zinc-600"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#111111]">Page Type</label>
                 <select
-                  disabled={!canEdit}
+                  disabled
                   value={pageType}
-                  onChange={(e) => setPageType(e.target.value as PageType)}
-                  className="mt-1.5 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm"
+                  className="mt-1.5 w-full rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-600"
                 >
                   <option value="home">Home</option>
                   <option value="services">Services</option>
                   <option value="approach">Approach</option>
-                  <option value="about">About</option>
                   <option value="contact">Contact</option>
-                  <option value="landing">Landing Page</option>
-                  <option value="standard">Standard</option>
+                  <option value="about">About</option>
                 </select>
               </div>
               <div>
@@ -251,13 +250,12 @@ export default function PageDetailsPage() {
                   disabled={!canEdit}
                   value={status}
                   onChange={(e) =>
-                    setStatus(e.target.value as 'draft' | 'published' | 'archived')
+                    setStatus(e.target.value as 'draft' | 'published')
                   }
                   className="mt-1.5 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm"
                 >
                   <option value="draft">Draft</option>
                   <option value="published">Published</option>
-                  <option value="archived">Archived</option>
                 </select>
               </div>
             </div>

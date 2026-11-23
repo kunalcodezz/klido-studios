@@ -131,7 +131,7 @@ export default function OverviewPage() {
       to: overview.homepageId ? `/dashboard/builder/${overview.homepageId}` : '/dashboard/pages',
       icon: Home,
     },
-    { label: 'Create page', to: '/dashboard/pages', icon: FilePlus2 },
+    { label: 'Manage 5 pages', to: '/dashboard/pages', icon: FilePlus2 },
     { label: 'Open website builder', to: '/dashboard/website', icon: Globe },
     { label: 'Upload media', to: '/dashboard/media', icon: ImagePlus },
     { label: 'Manage services', to: '/dashboard/services', icon: Briefcase },
@@ -184,11 +184,11 @@ export default function OverviewPage() {
         </div>
 
         <div className="rounded-lg border border-zinc-200 bg-white p-4">
-          <p className="text-xs font-medium text-zinc-500">Total Pages</p>
+          <p className="text-xs font-medium text-zinc-500">Managed Pages</p>
           <p className="mt-2 text-2xl font-semibold tracking-tight text-[#111111] tabular-nums">
             {overview.totalPages}
           </p>
-          <p className="mt-1 text-xs text-zinc-500">Registered CMS routes</p>
+          <p className="mt-1 text-xs text-zinc-500">Approved Klido routes (max 5)</p>
         </div>
 
         <div className="rounded-lg border border-zinc-200 bg-white p-4">

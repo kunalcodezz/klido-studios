@@ -9,6 +9,7 @@ import {
   safeUrlSchema,
   slugSchema,
 } from '../schemas/validation';
+import { filterAndSortApprovedPages } from '../data/pageRegistry';
 import type {
   BrandRecord,
   MediaAsset,
@@ -453,7 +454,7 @@ export async function saveSiteSetting(
 
 export function generateSitemapXml(siteUrl: string, pages: PageRecord[]): string {
   const normalizedBase = siteUrl.replace(/\/+$/, '');
-  const indexablePages = pages.filter(
+  const indexablePages = filterAndSortApprovedPages(pages).filter(
     (p) => p.status === 'published' && p.seo_metadata?.robotsIndex !== false
   );
 

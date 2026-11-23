@@ -52,20 +52,28 @@ describe('Milestone 6 — Drafts, Preview Tokens, Publishing & Revision Diffs', 
     expect(diff.removedCount).toBe(1);
   });
 
-  it('validates new page slugs and blocks unsafe SEO canonical/OG URLs', () => {
+  it('validates approved Klido slugs and blocks unapproved routes and unsafe SEO URLs', () => {
     expect(
       createPageInputSchema.safeParse({
-        title: 'Growth Sprint',
-        slug: '/growth-sprint',
-        page_type: 'landing',
+        title: 'Services',
+        slug: '/services',
+        page_type: 'services',
       }).success
     ).toBe(true);
 
     expect(
       createPageInputSchema.safeParse({
+        title: 'Obsolete Landing',
+        slug: '/growth-sprint',
+        page_type: 'services',
+      }).success
+    ).toBe(false);
+
+    expect(
+      createPageInputSchema.safeParse({
         title: 'Bad Slug',
         slug: 'no-leading-slash',
-        page_type: 'landing',
+        page_type: 'services',
       }).success
     ).toBe(false);
 

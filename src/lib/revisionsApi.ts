@@ -3,7 +3,12 @@ import { getSupabaseClient } from './supabase';
 import { fetchPageForBuilder, OptimisticConcurrencyError } from './builderApi';
 import { validatePageContentTree } from './schemaValidator';
 import type { BlockNode, PageContentTree } from '../schemas/blocks';
-import { optionalSafeUrlSchema, slugSchema } from '../schemas/validation';
+import { optionalSafeUrlSchema } from '../schemas/validation';
+import {
+  approvedPageSlugSchema,
+  getApprovedPageDefinition,
+  isApprovedCmsSlug,
+} from '../data/pageRegistry';
 import type { PageRecord, PageRevision, PageType, SeoMetadata } from '../types/database';
 
 export interface RevisionWithDetails extends PageRevision {
@@ -44,10 +49,8 @@ export const seoMetadataInputSchema = z.object({
 
 export const createPageInputSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(120),
-  slug: slugSchema,
-  page_type: z
-    .enum(['home', 'services', 'approach', 'about', 'contact', 'landing', 'standard'])
-    .default('landing'),
+  slug: approvedPageSlugSchema,
+  page_type: z.enum(['home', 'services', 'approach', 'about', 'contact']),
 });
 
 export async function sha256Hex(raw: string): Promise<string> {
@@ -181,7 +184,8 @@ export async function fetchPageRevisions(pageId?: string): Promise<RevisionWithD
     throw new Error(error.message);
   }
 
-  return (data ?? []) as unknown as RevisionWithDetails[];
+  const rows = (data ?? []) as unknown as RevisionWithDetails[];
+  return rows.filter((rev) => rev.pages?.slug && isApprovedCmsSlug(rev.pages.slug));
 }
 
 export async function fetchPublishedBaselineTree(
@@ -366,7 +370,8 @@ export async function updatePageMetadata(
     seo_metadata: SeoMetadata;
   }
 ): Promise<PageRecord> {
-  const validSlug = slugSchema.parse(updates.slug);
+  const validSlug = approvedPageSlugSchema.parse(updates.slug);
+  const definition = getApprovedPageDefinition(validSlug);
   const validSeo = seoMetadataInputSchema.parse(updates.seo_metadata);
   const supabase = getSupabaseClient();
   const {
@@ -378,7 +383,7 @@ export async function updatePageMetadata(
     .update({
       title: updates.title.trim(),
       slug: validSlug,
-      page_type: updates.page_type,
+      page_type: definition?.page_type ?? updates.page_type,
       ...(updates.status ? { status: updates.status } : {}),
       seo_metadata: validSeo,
       updated_by: user?.id ?? null,

@@ -13,6 +13,7 @@ Open the Supabase SQL Editor for project `wbckdglxkogblbegskho` and execute:
 3. `supabase/migrations/0003_rls_and_security_functions.sql`
 4. `supabase/migrations/0004_storage_policies.sql`
 5. `supabase/migrations/0005_seed_klido_defaults.sql`
+6. `supabase/migrations/0006_enforce_five_approved_pages.sql`
 
 ### B. Verify RLS & Security Policies
 Run `supabase/tests/rls_verification.sql` in the SQL Editor (rollback transaction included) to verify:

@@ -1,5 +1,6 @@
 import { getSupabaseClient } from './supabase';
 import { validatePageContentTree } from './schemaValidator';
+import { isApprovedCmsSlug } from '../data/pageRegistry';
 import type { BlockNode, PageContentTree } from '../schemas/blocks';
 import type { MediaAsset, PageRecord, PageRevision } from '../types/database';
 
@@ -39,6 +40,11 @@ export async function fetchPageForBuilder(pageId: string): Promise<LoadedBuilder
   }
 
   const typedPage = page as PageRecord;
+  if (!isApprovedCmsSlug(typedPage.slug) || typedPage.status === 'archived') {
+    throw new Error(
+      `Route "${typedPage.slug}" is archived and not part of the five approved Klido CMS pages.`
+    );
+  }
   const targetRevisionId = typedPage.draft_revision_id ?? typedPage.published_revision_id;
 
   let revision: PageRevision | null = null;

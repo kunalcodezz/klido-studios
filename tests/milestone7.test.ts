@@ -180,14 +180,20 @@ describe('Milestone 7 — Content Managers, Redirects, SEO & Sitemap Generation'
       }),
       makePage({
         id: '3',
-        slug: '/hidden-landing',
+        slug: '/about',
         status: 'published',
         seo_metadata: { robotsIndex: false },
       }),
       makePage({
         id: '4',
-        slug: '/draft-page',
+        slug: '/contact',
         status: 'draft',
+        seo_metadata: { robotsIndex: true },
+      }),
+      makePage({
+        id: '5',
+        slug: '/experimental-route',
+        status: 'published',
         seo_metadata: { robotsIndex: true },
       }),
     ];
@@ -198,8 +204,9 @@ describe('Milestone 7 — Content Managers, Redirects, SEO & Sitemap Generation'
     expect(xml).toContain('<loc>https://klido.in/services</loc>');
     expect(xml).toContain('<priority>1.0</priority>');
     expect(xml).toContain('<priority>0.8</priority>');
-    expect(xml).not.toContain('/hidden-landing');
-    expect(xml).not.toContain('/draft-page');
+    expect(xml).not.toContain('/about');
+    expect(xml).not.toContain('/contact');
+    expect(xml).not.toContain('/experimental-route');
     expect(xml).not.toContain('#/');
   });
 });

@@ -30,7 +30,8 @@ export default function WebsiteEntryPage() {
             Visual Website Builder
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Select any Klido page below to open the three-panel editor with live responsive preview.
+            Select any of the five approved Klido pages (Home, Services, Approach, Contact, About) to
+            open the visual editor.
           </p>
         </div>
 
@@ -59,8 +60,8 @@ export default function WebsiteEntryPage() {
             No Klido pages seeded yet
           </p>
           <p className="mx-auto mt-2 max-w-md text-sm text-zinc-600">
-            Seed all 5 audited Klido website pages (<code>/</code>, <code>/services</code>,{' '}
-            <code>/approach</code>, <code>/about</code>, <code>/contact</code>) into Supabase to
+            Seed all 5 approved Klido website pages (<code>/</code>, <code>/services</code>,{' '}
+            <code>/approach</code>, <code>/contact</code>, <code>/about</code>) into Supabase to
             begin visual editing.
           </p>
           {canEdit ? (

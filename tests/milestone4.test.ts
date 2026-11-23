@@ -188,8 +188,8 @@ describe('Milestone 4 — Block Registry, Schema Validation & Rendering Engine',
       '/',
       '/services',
       '/approach',
-      '/about',
       '/contact',
+      '/about',
     ]);
 
     for (const seedPage of KLIDO_SEED_PAGES) {

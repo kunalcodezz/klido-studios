@@ -310,6 +310,28 @@ export const KLIDO_SEED_PAGES: KlidoSeedPageBlueprint[] = [
     },
   },
   {
+    title: 'Contact',
+    slug: '/contact',
+    page_type: 'contact',
+    seo_metadata: {
+      seoTitle: 'Contact | Klido',
+      metaDescription: 'Start a project with Klido or ask about paid media, social, influencer, or operations retainers.',
+      canonicalUrl: 'https://www.klido.in/contact',
+      ogTitle: 'Contact | Klido',
+      ogDescription: "Let's build something great together.",
+      ogImage: 'https://www.klido.in/klido_Logo.png',
+      robotsIndex: true,
+      robotsFollow: true,
+    },
+    tree: {
+      version: 1,
+      sections: [
+        createBlockNode('contact', { name: 'Contact Section' }),
+        createBlockNode('footer', { name: 'Site Footer' }),
+      ],
+    },
+  },
+  {
     title: 'About',
     slug: '/about',
     page_type: 'about',
@@ -378,28 +400,6 @@ export const KLIDO_SEED_PAGES: KlidoSeedPageBlueprint[] = [
             primaryCta: { label: "Tell us what you're building", href: '/contact', variant: 'primary' },
           },
         }),
-        createBlockNode('footer', { name: 'Site Footer' }),
-      ],
-    },
-  },
-  {
-    title: 'Contact',
-    slug: '/contact',
-    page_type: 'contact',
-    seo_metadata: {
-      seoTitle: 'Contact | Klido',
-      metaDescription: 'Start a project with Klido or ask about paid media, social, influencer, or operations retainers.',
-      canonicalUrl: 'https://www.klido.in/contact',
-      ogTitle: 'Contact | Klido',
-      ogDescription: "Let's build something great together.",
-      ogImage: 'https://www.klido.in/klido_Logo.png',
-      robotsIndex: true,
-      robotsFollow: true,
-    },
-    tree: {
-      version: 1,
-      sections: [
-        createBlockNode('contact', { name: 'Contact Section' }),
         createBlockNode('footer', { name: 'Site Footer' }),
       ],
     },

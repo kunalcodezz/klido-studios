@@ -1,4 +1,8 @@
 import { getSupabaseClient, isSupabaseConfigured } from './supabase';
+import {
+  filterAndSortApprovedPages,
+  isApprovedCmsSlug,
+} from '../data/pageRegistry';
 import type {
   AuditLogRecord,
   MediaAsset,
@@ -81,15 +85,16 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewData> {
     throw new Error(firstError.message);
   }
 
-  const pages = (pagesRes.data ?? []) as Pick<
+  const rawPages = (pagesRes.data ?? []) as Pick<
     PageRecord,
     'id' | 'title' | 'slug' | 'page_type' | 'status' | 'published_at' | 'updated_at'
   >[];
+  const pages = filterAndSortApprovedPages(rawPages);
   const media = (mediaRes.data ?? []) as Pick<MediaAsset, 'id' | 'file_size'>[];
 
   const publishedPages = pages.filter((p) => p.status === 'published');
   const draftPages = pages.filter((p) => p.status === 'draft');
-  const archivedPages = pages.filter((p) => p.status === 'archived');
+  const archivedPages = rawPages.filter((p) => p.status === 'archived');
   const homepage = pages.find((p) => p.page_type === 'home' || p.slug === '/') ?? pages[0] ?? null;
 
   const latestPublishedDates = publishedPages
@@ -98,6 +103,10 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewData> {
     .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
   const mediaTotalBytes = media.reduce((sum, item) => sum + (Number(item.file_size) || 0), 0);
+
+  const recentRevisions = ((revisionsRes.data ?? []) as unknown as RevisionWithPage[]).filter(
+    (rev) => rev.pages?.slug && isApprovedCmsSlug(rev.pages.slug)
+  );
 
   return {
     schemaReady: true,
@@ -109,7 +118,7 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewData> {
     homepageId: homepage?.id ?? null,
     mediaCount: media.length,
     mediaTotalBytes,
-    recentRevisions: (revisionsRes.data ?? []) as unknown as RevisionWithPage[],
+    recentRevisions,
     recentActivity: (logsRes.data ?? []) as AuditLogRecord[],
   };
 }
@@ -125,7 +134,7 @@ export async function fetchAllPages(): Promise<PageRecord[]> {
     throw new Error(error.message);
   }
 
-  return (data ?? []) as PageRecord[];
+  return filterAndSortApprovedPages((data ?? []) as PageRecord[]);
 }
 
 export async function fetchAuditLogs(limit = 50): Promise<AuditLogRecord[]> {
